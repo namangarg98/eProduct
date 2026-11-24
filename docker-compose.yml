@@ -1,0 +1,28 @@
+services:
+  web:
+    build: { context: ., dockerfile: web/Dockerfile }
+    ports: ["8080:80"]
+    depends_on: [api]
+
+  api:
+    build: { context: ., dockerfile: api/Dockerfile }
+    # Not published to the host: the browser reaches it only through web's /api proxy.
+    environment:
+      PORT: 3001
+      PRODUCTS_API_URL: https://fakestoreapi.com
+      DB_PATH: /data/eproduct.db
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SALES_INBOX: sales@eproduct.local
+      MAIL_FROM: no-reply@eproduct.local
+    volumes: [db:/data]
+    depends_on: [mailpit]
+
+  # Local stand-in for the sales inbox: view sent enquiries at http://localhost:8025
+  # 1025 (SMTP) is published so `npm run dev` on the host can send to it too.
+  mailpit:
+    image: docker.io/axllent/mailpit:v1.29
+    ports: ["8025:8025", "1025:1025"]
+
+volumes:
+  db:
